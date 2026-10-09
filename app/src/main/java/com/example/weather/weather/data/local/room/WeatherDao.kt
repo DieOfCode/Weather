@@ -8,6 +8,7 @@ import com.example.weather.weather.data.local.room.entity.CityEntity
 import com.example.weather.weather.data.local.room.entity.CurrentWeatherEntity
 import com.example.weather.weather.data.local.room.entity.DailyWeatherEntity
 import com.example.weather.weather.data.local.room.entity.HourlyWeatherEntity
+import com.example.weather.weather.data.local.room.entity.SelectedCityEntity
 import com.example.weather.weather.data.local.room.relation.WeatherWithForecasts
 import kotlinx.coroutines.flow.Flow
 
@@ -21,8 +22,22 @@ interface WeatherDao {
     @Query("SELECT * FROM cities ORDER BY name COLLATE NOCASE ASC")
     fun observeCities(): Flow<List<CityEntity>>
 
+    @Query(
+        """
+        SELECT cities.*
+        FROM selected_city
+        INNER JOIN cities ON selected_city.city_id = cities.id
+        WHERE selected_city.singleton_id = :singletonId
+        LIMIT 1
+        """,
+    )
+    fun observeSelectedCity(singletonId: Int): Flow<CityEntity?>
+
     @Upsert
     suspend fun upsertCity(city: CityEntity)
+
+    @Upsert
+    suspend fun upsertSelectedCity(selectedCity: SelectedCityEntity)
 
     @Upsert
     suspend fun upsertCurrentWeather(currentWeather: CurrentWeatherEntity)
@@ -47,4 +62,7 @@ interface WeatherDao {
 
     @Query("DELETE FROM cities")
     suspend fun deleteAllCities()
+
+    @Query("DELETE FROM selected_city")
+    suspend fun clearSelectedCity()
 }

@@ -1,5 +1,6 @@
 package com.example.weather.weather
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,13 +23,22 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.weather.R
 import com.example.weather.ui.theme.WeatherTheme
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 
 @Composable
@@ -50,7 +60,7 @@ fun WeatherScreen(
         )
 
         is WeatherScreenState.Error -> WeatherError(
-            message = state.message,
+            messageResId = state.messageResId,
             onRetry = onRetry,
             modifier = modifier,
         )
@@ -58,6 +68,45 @@ fun WeatherScreen(
         WeatherScreenState.Loading -> WeatherLoader(
             modifier = modifier,
         )
+
+        WeatherScreenState.NoCitySelected -> WeatherNoCity(
+            onChooseCity = onChooseCity,
+            modifier = modifier,
+        )
+    }
+}
+
+@Composable
+private fun WeatherNoCity(
+    modifier: Modifier = Modifier,
+    onChooseCity: () -> Unit,
+) {
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(
+            space = 16.dp,
+            alignment = Alignment.CenterVertically,
+        ),
+    ) {
+        Text(
+            text = stringResource(R.string.no_city_selected_title),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = stringResource(R.string.no_city_selected_message),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+        Button(onClick = onChooseCity) {
+            Text(stringResource(R.string.choose_city))
+        }
     }
 }
 
@@ -109,10 +158,10 @@ private fun WeatherContent(
                 CurrentWeatherCard(state = state.weatherState)
             }
 
-            state.refreshError?.let { message ->
+            state.refreshErrorResId?.let { messageResId ->
                 item(key = "refresh_error") {
                     RefreshErrorBanner(
-                        message = message,
+                        messageResId = messageResId,
                         onRetry = onRefresh,
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -121,7 +170,7 @@ private fun WeatherContent(
 
             item {
                 Text(
-                    text = "Прогноз на неделю",
+                    text = stringResource(R.string.weekly_forecast),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(top = 8.dp),
@@ -134,6 +183,7 @@ private fun WeatherContent(
             ) { day ->
                 DailyWeatherRow(
                     day = day,
+                    timeZoneId = state.weatherState.timeZoneId,
                     onClick = { onDayClick(day) },
                 )
             }
@@ -147,7 +197,7 @@ private fun WeatherContent(
 
 @Composable
 private fun RefreshErrorBanner(
-    message: String,
+    @StringRes messageResId: Int,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -166,13 +216,13 @@ private fun RefreshErrorBanner(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = message,
+                text = stringResource(messageResId),
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.bodyMedium,
             )
 
             TextButton(onClick = onRetry) {
-                Text(text = "Повторить")
+                Text(text = stringResource(R.string.retry))
             }
         }
     }
@@ -180,7 +230,7 @@ private fun RefreshErrorBanner(
 
 @Composable
 private fun WeatherError(
-    message: String,
+    @StringRes messageResId: Int,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -192,10 +242,10 @@ private fun WeatherError(
             alignment = Alignment.CenterVertically,
         )
     ) {
-        Text(message)
+        Text(stringResource(messageResId))
 
         Button(onClick = onRetry) {
-            Text("Повторить")
+            Text(stringResource(R.string.retry))
         }
     }
 }
@@ -218,7 +268,7 @@ private fun CityHeader(
             fontWeight = FontWeight.Bold,
         )
         TextButton(onClick = onChooseCity) {
-            Text(text = "Сменить город")
+            Text(text = stringResource(R.string.change_city))
         }
     }
 }
@@ -237,24 +287,24 @@ private fun CurrentWeatherCard(state: WeatherUiState) {
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text = "${state.temperature}°",
+                text = stringResource(R.string.temperature_value, state.temperature),
                 fontSize = 64.sp,
                 fontWeight = FontWeight.Light,
             )
             Text(
-                text = state.description,
+                text = stringResource(state.condition.descriptionResId),
                 style = MaterialTheme.typography.titleMedium,
             )
             Text(
-                text = "Ощущается как ${state.feelsLike}°",
+                text = stringResource(R.string.feels_like, state.feelsLike),
                 style = MaterialTheme.typography.bodyMedium,
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
-                Text(text = "Влажность ${state.humidityPercent}%")
-                Text(text = "Ветер ${state.windSpeedKmh} км/ч")
+                Text(text = stringResource(R.string.humidity, state.humidityPercent))
+                Text(text = stringResource(R.string.wind_speed, state.windSpeedKmh))
             }
         }
     }
@@ -263,6 +313,7 @@ private fun CurrentWeatherCard(state: WeatherUiState) {
 @Composable
 private fun DailyWeatherRow(
     day: DailyWeatherUi,
+    timeZoneId: String,
     onClick: () -> Unit,
 ) {
     Card(
@@ -274,19 +325,52 @@ private fun DailyWeatherRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = day.day,
+                text = localizedDayLabel(
+                    date = day.date,
+                    timeZoneId = timeZoneId,
+                ),
                 modifier = Modifier.weight(1f),
                 fontWeight = FontWeight.Medium,
             )
             Text(
-                text = day.conditionEmoji,
+                text = day.condition.emoji,
                 fontSize = 24.sp,
                 modifier = Modifier.padding(horizontal = 12.dp),
             )
             Text(
-                text = "${day.minimumTemperature}° / ${day.maximumTemperature}°",
+                text = stringResource(
+                    R.string.temperature_range,
+                    day.minimumTemperature,
+                    day.maximumTemperature,
+                ),
                 fontWeight = FontWeight.SemiBold,
             )
+        }
+    }
+}
+
+@Composable
+private fun localizedDayLabel(
+    date: LocalDate,
+    timeZoneId: String,
+): String {
+    val configuration = LocalConfiguration.current
+    val locale = configuration.locales[0]
+    val today = LocalDate.now(ZoneId.of(timeZoneId))
+
+    return when (date) {
+        today -> stringResource(R.string.today)
+        today.plusDays(1) -> stringResource(R.string.tomorrow)
+        else -> remember(date, locale) {
+            date
+                .format(DateTimeFormatter.ofPattern("EEEE", locale))
+                .replaceFirstChar { firstCharacter ->
+                    if (firstCharacter.isLowerCase()) {
+                        firstCharacter.titlecase(locale)
+                    } else {
+                        firstCharacter.toString()
+                    }
+                }
         }
     }
 }
@@ -328,16 +412,60 @@ private fun WeatherLoadingPreview() {
 }
 
 @Preview(
+    name = "No city — English",
+    locale = "en",
+    showBackground = true,
+    showSystemUi = true,
+)
+@Composable
+private fun WeatherNoCityEnglishPreview() {
+    WeatherTheme {
+        Surface {
+            WeatherScreen(
+                state = WeatherScreenState.NoCitySelected,
+                onChooseCity = {},
+                onDayClick = {},
+                onRetry = {},
+                onRefresh = {},
+            )
+        }
+    }
+}
+
+@Preview(
+    name = "No city — Russian",
+    locale = "ru",
+    showBackground = true,
+    showSystemUi = true,
+)
+@Composable
+private fun WeatherNoCityRussianPreview() {
+    WeatherTheme {
+        Surface {
+            WeatherScreen(
+                state = WeatherScreenState.NoCitySelected,
+                onChooseCity = {},
+                onDayClick = {},
+                onRetry = {},
+                onRefresh = {},
+            )
+        }
+    }
+}
+
+@Preview(
     name = "Initial error",
     showBackground = true,
-    showSystemUi = true
+    showSystemUi = true,
 )
 @Composable
 private fun WeatherErrorPreview() {
     WeatherTheme {
         Surface {
             WeatherScreen(
-                state = WeatherScreenState.Error(message = "Ошибка"),
+                state = WeatherScreenState.Error(
+                    messageResId = R.string.generic_error,
+                ),
                 onChooseCity = {},
                 onDayClick = {},
                 onRetry = {},
@@ -382,7 +510,7 @@ private fun WeatherRefreshErrorPreview() {
             WeatherScreen(
                 state = WeatherScreenState.Content(
                     weatherState = sampleWeatherUiState,
-                    refreshError = "Не удалось обновить погоду",
+                    refreshErrorResId = R.string.weather_update_failed,
                 ),
                 onChooseCity = {},
                 onDayClick = {},

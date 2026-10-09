@@ -35,7 +35,7 @@ class WeatherViewModel : ViewModel() {
 
         _state.value = currentState.copy(
             isRefreshing = true,
-            refreshError = null,
+            refreshErrorResId = null,
         )
 
         refreshJob = viewModelScope.launch {

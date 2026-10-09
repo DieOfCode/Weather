@@ -26,6 +26,27 @@ internal object WeatherSqlContract {
         const val DROP_TABLE = "DROP TABLE IF EXISTS $TABLE_NAME"
     }
 
+    object SelectedCity {
+        const val TABLE_NAME = "selected_city"
+
+        const val COLUMN_SINGLETON_ID = "singleton_id"
+        const val COLUMN_CITY_ID = "city_id"
+
+        const val SINGLETON_ID = 1
+
+        const val CREATE_TABLE = """
+            CREATE TABLE IF NOT EXISTS $TABLE_NAME (
+                $COLUMN_SINGLETON_ID INTEGER NOT NULL PRIMARY KEY,
+                $COLUMN_CITY_ID TEXT NOT NULL UNIQUE,
+                FOREIGN KEY ($COLUMN_CITY_ID)
+                    REFERENCES ${Cities.TABLE_NAME}(${Cities.COLUMN_ID})
+                    ON DELETE CASCADE
+            )
+        """
+
+        const val DROP_TABLE = "DROP TABLE IF EXISTS $TABLE_NAME"
+    }
+
     object CurrentWeather {
         const val TABLE_NAME = "current_weather"
 
@@ -121,12 +142,14 @@ internal object WeatherSqlContract {
 
     val createStatements = listOf(
         Cities.CREATE_TABLE,
+        SelectedCity.CREATE_TABLE,
         CurrentWeather.CREATE_TABLE,
         HourlyWeather.CREATE_TABLE,
         DailyWeather.CREATE_TABLE,
     )
 
     val dropStatements = listOf(
+        SelectedCity.DROP_TABLE,
         DailyWeather.DROP_TABLE,
         HourlyWeather.DROP_TABLE,
         CurrentWeather.DROP_TABLE,

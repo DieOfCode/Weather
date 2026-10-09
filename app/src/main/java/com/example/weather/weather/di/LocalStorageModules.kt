@@ -17,7 +17,9 @@ val roomLocalStorageModule = module {
             androidContext(),
             WeatherRoomDatabase::class.java,
             WeatherRoomDatabase.DATABASE_NAME
-        ).build()
+        )
+            .addMigrations(WeatherRoomDatabase.MIGRATION_1_2)
+            .build()
     }
     single<WeatherLocalDataSource> { RoomWeatherLocalDataSource(get<WeatherRoomDatabase>()) }
 }

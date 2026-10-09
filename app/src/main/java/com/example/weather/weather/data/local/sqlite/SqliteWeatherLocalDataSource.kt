@@ -1,5 +1,6 @@
 package com.example.weather.weather.data.local.sqlite
 
+import android.content.ContentValues
 import android.database.sqlite.SQLiteDatabase
 import androidx.core.database.sqlite.transaction
 import com.example.weather.weather.data.local.WeatherLocalDataSource
@@ -23,6 +24,7 @@ private data class InvalidationState(
     val globalVersion: Long = 0,
     val cityVersions: Map<String, Long> = emptyMap(),
     val citiesVersion: Long = 0,
+    val selectedCityVersion: Long = 0,
 )
 
 class SqliteWeatherLocalDataSource(
@@ -104,6 +106,24 @@ class SqliteWeatherLocalDataSource(
         }
         .distinctUntilChanged()
 
+    override fun observeSelectedCity(): Flow<City?> = invalidationState
+        .map { state ->
+            Triple(
+                state.globalVersion,
+                state.citiesVersion,
+                state.selectedCityVersion,
+            )
+        }
+        .distinctUntilChanged()
+        .mapLatest {
+            withContext(ioDispatcher) {
+                databaseMutex.withLock {
+                    readSelectedCity(databaseHelper.readableDatabase)
+                }
+            }
+        }
+        .distinctUntilChanged()
+
     override suspend fun saveForecast(forecast: WeatherForecast) {
         val cityId = forecast.city.id
         require(cityId.isNotBlank()) {
@@ -173,7 +193,11 @@ class SqliteWeatherLocalDataSource(
                         arrayOf(cityId),
                     )
                 }
-                invalidateCity(cityId, citiesChanged = true)
+                invalidateCity(
+                    cityId = cityId,
+                    citiesChanged = true,
+                    selectedCityMayHaveChanged = true,
+                )
             }
         }
     }
@@ -188,6 +212,54 @@ class SqliteWeatherLocalDataSource(
                     null,
                 )
                 invalidateAll()
+            }
+        }
+    }
+
+    override suspend fun clearSelectedCity() {
+        withContext(ioDispatcher) {
+            databaseMutex.withLock {
+                val deletedRows = databaseHelper.writableDatabase.delete(
+                    WeatherSqlContract.SelectedCity.TABLE_NAME,
+                    null,
+                    null,
+                )
+
+                if (deletedRows > 0) {
+                    invalidateSelectedCity()
+                }
+            }
+        }
+    }
+
+    override suspend fun selectCity(cityId: String) {
+        require(cityId.isNotBlank()) {
+            "cityId must not be blank"
+        }
+
+        withContext(ioDispatcher) {
+            databaseMutex.withLock {
+                val values = ContentValues().apply {
+                    put(
+                        WeatherSqlContract.SelectedCity.COLUMN_SINGLETON_ID,
+                        WeatherSqlContract.SelectedCity.SINGLETON_ID,
+                    )
+                    put(
+                        WeatherSqlContract.SelectedCity.COLUMN_CITY_ID,
+                        cityId,
+                    )
+                }
+                val insertedRowId = databaseHelper.writableDatabase.insertWithOnConflict(
+                    WeatherSqlContract.SelectedCity.TABLE_NAME,
+                    null,
+                    values,
+                    SQLiteDatabase.CONFLICT_REPLACE,
+                )
+
+                check(insertedRowId != -1L) {
+                    "Failed to select city with id=$cityId"
+                }
+                invalidateSelectedCity()
             }
         }
     }
@@ -227,6 +299,36 @@ class SqliteWeatherLocalDataSource(
             }
         }
         return cities
+    }
+
+    private fun readSelectedCity(database: SQLiteDatabase): City? {
+        val cities = WeatherSqlContract.Cities
+        val selectedCity = WeatherSqlContract.SelectedCity
+        val query = """
+            SELECT
+                city.${cities.COLUMN_ID} AS ${cities.COLUMN_ID},
+                city.${cities.COLUMN_NAME} AS ${cities.COLUMN_NAME},
+                city.${cities.COLUMN_COUNTRY_CODE} AS ${cities.COLUMN_COUNTRY_CODE},
+                city.${cities.COLUMN_LATITUDE} AS ${cities.COLUMN_LATITUDE},
+                city.${cities.COLUMN_LONGITUDE} AS ${cities.COLUMN_LONGITUDE},
+                city.${cities.COLUMN_TIME_ZONE_ID} AS ${cities.COLUMN_TIME_ZONE_ID}
+            FROM ${selectedCity.TABLE_NAME} AS selected
+            INNER JOIN ${cities.TABLE_NAME} AS city
+                ON selected.${selectedCity.COLUMN_CITY_ID} = city.${cities.COLUMN_ID}
+            WHERE selected.${selectedCity.COLUMN_SINGLETON_ID} = ?
+            LIMIT 1
+        """.trimIndent()
+
+        return database.rawQuery(
+            query,
+            arrayOf(selectedCity.SINGLETON_ID.toString()),
+        ).use { cursor ->
+            if (!cursor.moveToFirst()) {
+                return@use null
+            }
+
+            CityCursorReader(cursor).readCurrentRow()
+        }
     }
 
     private fun readCurrentWeather(
@@ -401,6 +503,7 @@ class SqliteWeatherLocalDataSource(
     private fun invalidateCity(
         cityId: String,
         citiesChanged: Boolean,
+        selectedCityMayHaveChanged: Boolean = false,
     ) {
         invalidationState.update { state ->
             val nextVersion = (state.cityVersions[cityId] ?: 0L) + 1L
@@ -410,6 +513,11 @@ class SqliteWeatherLocalDataSource(
                     state.citiesVersion + 1L
                 } else {
                     state.citiesVersion
+                },
+                selectedCityVersion = if (selectedCityMayHaveChanged) {
+                    state.selectedCityVersion + 1L
+                } else {
+                    state.selectedCityVersion
                 },
             )
         }
@@ -421,6 +529,14 @@ class SqliteWeatherLocalDataSource(
                 globalVersion = state.globalVersion + 1L,
                 cityVersions = emptyMap(),
                 citiesVersion = state.citiesVersion + 1L,
+            )
+        }
+    }
+
+    private fun invalidateSelectedCity() {
+        invalidationState.update { state ->
+            state.copy(
+                selectedCityVersion = state.selectedCityVersion + 1L,
             )
         }
     }

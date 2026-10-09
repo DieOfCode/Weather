@@ -2,6 +2,7 @@ package com.example.weather.weather.data.local.room
 
 import androidx.room.withTransaction
 import com.example.weather.weather.data.local.WeatherLocalDataSource
+import com.example.weather.weather.data.local.room.entity.SelectedCityEntity
 import com.example.weather.weather.domain.model.City
 import com.example.weather.weather.domain.model.WeatherForecast
 import kotlinx.coroutines.flow.Flow
@@ -30,6 +31,13 @@ class RoomWeatherLocalDataSource(
         .observeCities()
         .map { cityEntities ->
             cityEntities.map(RoomWeatherMapper::cityToDomain)
+        }
+        .distinctUntilChanged()
+
+    override fun observeSelectedCity(): Flow<City?> = weatherDao
+        .observeSelectedCity(SelectedCityEntity.SINGLETON_ID)
+        .map { cityEntity ->
+            cityEntity?.let(RoomWeatherMapper::cityToDomain)
         }
         .distinctUntilChanged()
 
@@ -79,5 +87,19 @@ class RoomWeatherLocalDataSource(
 
     override suspend fun clear() {
         weatherDao.deleteAllCities()
+    }
+
+    override suspend fun clearSelectedCity() {
+        weatherDao.clearSelectedCity()
+    }
+
+    override suspend fun selectCity(cityId: String) {
+        require(cityId.isNotBlank()) {
+            "cityId must not be blank"
+        }
+
+        weatherDao.upsertSelectedCity(
+            SelectedCityEntity(cityId = cityId),
+        )
     }
 }

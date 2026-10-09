@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Погода</string>
+    <string name="weather_title">Погода</string>
+    <string name="change_city">Сменить город</string>
+    <string name="weekly_forecast">Прогноз на неделю</string>
+    <string name="retry">Повторить</string>
+    <string name="feels_like">Ощущается как %1$d°</string>
+    <string name="humidity">Влажность %1$d%%</string>
+    <string name="wind_speed">Ветер %1$d км/ч</string>
+    <string name="temperature_value">%1$d°</string>
+    <string name="temperature_range">%1$d° / %2$d°</string>
+    <string name="today">Сегодня</string>
+    <string name="tomorrow">Завтра</string>
+    <string name="generic_error">Что-то пошло не так</string>
+    <string name="weather_update_failed">Не удалось обновить погоду</string>
+    <string name="no_city_selected_title">Город не выбран</string>
+    <string name="no_city_selected_message">Выберите город, чтобы посмотреть текущую погоду и прогноз</string>
+    <string name="choose_city">Выбрать город</string>
+
+    <string name="weather_clear">Ясно</string>
+    <string name="weather_mainly_clear">Преимущественно ясно</string>
+    <string name="weather_partly_cloudy">Переменная облачность</string>
+    <string name="weather_overcast">Пасмурно</string>
+    <string name="weather_fog">Туман</string>
+    <string name="weather_light_drizzle">Небольшая морось</string>
+    <string name="weather_drizzle">Морось</string>
+    <string name="weather_heavy_drizzle">Сильная морось</string>
+    <string name="weather_freezing_drizzle">Ледяная морось</string>
+    <string name="weather_light_rain">Небольшой дождь</string>
+    <string name="weather_rain">Дождь</string>
+    <string name="weather_heavy_rain">Сильный дождь</string>
+    <string name="weather_freezing_rain">Ледяной дождь</string>
+    <string name="weather_light_snow">Небольшой снег</string>
+    <string name="weather_snow">Снег</string>
+    <string name="weather_heavy_snow">Сильный снег</string>
+    <string name="weather_snow_grains">Снежная крупа</string>
+    <string name="weather_light_rain_shower">Небольшой ливень</string>
+    <string name="weather_rain_shower">Ливень</string>
+    <string name="weather_heavy_rain_shower">Сильный ливень</string>
+    <string name="weather_light_snow_shower">Небольшой снежный заряд</string>
+    <string name="weather_heavy_snow_shower">Сильный снежный заряд</string>
+    <string name="weather_thunderstorm">Гроза</string>
+    <string name="weather_thunderstorm_with_hail">Гроза с градом</string>
+    <string name="weather_unknown">Неизвестные погодные условия</string>
+</resources>

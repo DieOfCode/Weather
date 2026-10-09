@@ -10,6 +10,8 @@ interface WeatherLocalDataSource {
 
     fun observeCities(): Flow<List<City>>
 
+    fun observeSelectedCity(): Flow<City?>
+
     suspend fun saveForecast(forecast: WeatherForecast)
 
     suspend fun deleteForecast(cityId: String)
@@ -17,4 +19,8 @@ interface WeatherLocalDataSource {
     suspend fun deleteCity(cityId: String)
 
     suspend fun clear()
+
+    suspend fun clearSelectedCity()
+
+    suspend fun selectCity(cityId: String)
 }

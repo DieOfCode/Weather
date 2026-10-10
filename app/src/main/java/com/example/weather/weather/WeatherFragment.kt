@@ -5,11 +5,11 @@ import android.view.View
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.weather.R
 import com.example.weather.databinding.FragmentWeatherBinding
 import com.example.weather.ui.theme.WeatherTheme
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class WeatherFragment : Fragment(R.layout.fragment_weather) {
 
@@ -17,7 +17,7 @@ class WeatherFragment : Fragment(R.layout.fragment_weather) {
     private val binding: FragmentWeatherBinding
         get() = checkNotNull(_binding)
 
-    private val weatherViewModel: WeatherViewModel by viewModels()
+    private val weatherViewModel: WeatherViewModel by viewModel()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)

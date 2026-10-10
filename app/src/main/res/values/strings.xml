@@ -14,9 +14,15 @@
     <string name="tomorrow">Tomorrow</string>
     <string name="generic_error">Something went wrong</string>
     <string name="weather_update_failed">Couldn’t update the weather</string>
+    <string name="weather_network_error">Check your internet connection</string>
+    <string name="weather_service_error">Weather service is temporarily unavailable</string>
+    <string name="weather_invalid_data_error">The weather service returned invalid data</string>
     <string name="no_city_selected_title">No city selected</string>
     <string name="no_city_selected_message">Choose a city to see the current weather and forecast</string>
     <string name="choose_city">Choose city</string>
+    <string name="current_location">Current location</string>
+    <string name="location_permission_missing">Location permission is required</string>
+    <string name="location_unavailable">Current location is unavailable. Try again</string>
 
     <string name="weather_clear">Clear</string>
     <string name="weather_mainly_clear">Mainly clear</string>

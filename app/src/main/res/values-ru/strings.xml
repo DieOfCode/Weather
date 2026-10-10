@@ -14,9 +14,15 @@
     <string name="tomorrow">Завтра</string>
     <string name="generic_error">Что-то пошло не так</string>
     <string name="weather_update_failed">Не удалось обновить погоду</string>
+    <string name="weather_network_error">Проверьте подключение к интернету</string>
+    <string name="weather_service_error">Сервис погоды временно недоступен</string>
+    <string name="weather_invalid_data_error">Сервис погоды вернул некорректные данные</string>
     <string name="no_city_selected_title">Город не выбран</string>
     <string name="no_city_selected_message">Выберите город, чтобы посмотреть текущую погоду и прогноз</string>
     <string name="choose_city">Выбрать город</string>
+    <string name="current_location">Текущее местоположение</string>
+    <string name="location_permission_missing">Необходимо разрешение на доступ к местоположению</string>
+    <string name="location_unavailable">Не удалось определить местоположение. Попробуйте снова</string>
 
     <string name="weather_clear">Ясно</string>
     <string name="weather_mainly_clear">Преимущественно ясно</string>

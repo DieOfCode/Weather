@@ -7,7 +7,6 @@ import com.example.weather.weather.data.local.room.WeatherRoomDatabase
 import com.example.weather.weather.data.local.sqlite.DatabaseHelper
 import com.example.weather.weather.data.local.sqlite.SqliteWeatherLocalDataSource
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
@@ -25,10 +24,6 @@ val roomLocalStorageModule = module {
 }
 
 val sqliteLocalStorageModule = module {
-    single<CoroutineDispatcher>(ioDispatcherQualifier) {
-        Dispatchers.IO
-    }
-
     single<DatabaseHelper> {
         DatabaseHelper(androidContext())
     }

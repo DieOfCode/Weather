@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.androidx.navigation.fragment)
     implementation(libs.material)
+    implementation(libs.playServicesLocation)
 
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)

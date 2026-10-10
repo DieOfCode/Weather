@@ -25,7 +25,7 @@ internal object RemoteWeatherMapper {
         val zoneId = parseZoneId(response.timezone.required("timezone"))
 
         return WeatherForecast(
-            city = city,
+            city = city.copy(timeZoneId = zoneId.id),
             current = currentToDomain(
                 current = response.current.required("current"),
                 zoneId = zoneId,

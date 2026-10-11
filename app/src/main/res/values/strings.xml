@@ -23,6 +23,15 @@
     <string name="current_location">Current location</string>
     <string name="location_permission_missing">Location permission is required</string>
     <string name="location_unavailable">Current location is unavailable. Try again</string>
+    <string name="city_picker_title">Choose city</string>
+    <string name="city_search_hint">Search for a city</string>
+    <string name="saved_cities">Saved cities</string>
+    <string name="search_results">Search results</string>
+    <string name="city_search_empty">No cities found</string>
+    <string name="city_search_error">Couldn’t find cities</string>
+    <string name="delete_city">Delete city</string>
+    <string name="selected_city">Selected city</string>
+    <string name="use_current_location">Use current location</string>
 
     <string name="weather_clear">Clear</string>
     <string name="weather_mainly_clear">Mainly clear</string>

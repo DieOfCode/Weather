@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.filterNotNull
@@ -124,6 +123,7 @@ class WeatherViewModel(
         WeatherDataState.NoCity -> when (locationLoadState) {
             is LocationLoadState.Failed -> WeatherScreenState.Error(
                 messageResId = locationLoadState.messageResId,
+                retryAction = WeatherRetryAction.RequestLocationPermission,
             )
 
             LocationLoadState.Idle -> WeatherScreenState.NoCitySelected
@@ -139,6 +139,7 @@ class WeatherViewModel(
                 refreshWeather(city)
             }
         }
+
     }
 
     private fun refreshWeather(city: City) {
@@ -242,11 +243,17 @@ class WeatherViewModel(
         }
     }
 
+    fun onLocationPermissionDenied() {
+        locationLoadState.value = LocationLoadState.Failed(
+            messageResId = R.string.location_permission_missing,
+        )
+    }
+
     @StringRes
     private fun DeviceLocationException.toMessageResId(): Int = when (this) {
         is DeviceLocationException.LocationUnavailable,
         is DeviceLocationException.ProviderUnavailable,
-        -> R.string.location_unavailable
+            -> R.string.location_unavailable
 
         is DeviceLocationException.PermissionMissing -> R.string.location_permission_missing
     }

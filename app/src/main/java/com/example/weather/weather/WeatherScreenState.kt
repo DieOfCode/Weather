@@ -16,5 +16,11 @@ sealed interface WeatherScreenState {
 
     data class Error(
         @StringRes val messageResId: Int,
+        val retryAction: WeatherRetryAction = WeatherRetryAction.RefreshWeather,
     ) : WeatherScreenState
+}
+
+enum class WeatherRetryAction {
+    RefreshWeather,
+    RequestLocationPermission,
 }

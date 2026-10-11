@@ -52,6 +52,7 @@ dependencies {
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.fragment.ktx)
     implementation(libs.androidx.navigation.fragment)
+    implementation(libs.androidx.recyclerview)
     implementation(libs.material)
     implementation(libs.playServicesLocation)
 

@@ -23,6 +23,15 @@
     <string name="current_location">Текущее местоположение</string>
     <string name="location_permission_missing">Необходимо разрешение на доступ к местоположению</string>
     <string name="location_unavailable">Не удалось определить местоположение. Попробуйте снова</string>
+    <string name="city_picker_title">Выбор города</string>
+    <string name="city_search_hint">Найти город</string>
+    <string name="saved_cities">Сохранённые города</string>
+    <string name="search_results">Результаты поиска</string>
+    <string name="city_search_empty">Города не найдены</string>
+    <string name="city_search_error">Не удалось найти города</string>
+    <string name="delete_city">Удалить город</string>
+    <string name="selected_city">Выбранный город</string>
+    <string name="use_current_location">Использовать текущее местоположение</string>
 
     <string name="weather_clear">Ясно</string>
     <string name="weather_mainly_clear">Преимущественно ясно</string>

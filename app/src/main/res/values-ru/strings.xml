@@ -32,6 +32,7 @@
     <string name="delete_city">Удалить город</string>
     <string name="selected_city">Выбранный город</string>
     <string name="use_current_location">Использовать текущее местоположение</string>
+    <string name="hourly_forecast_title">Почасовой прогноз</string>
 
     <string name="weather_clear">Ясно</string>
     <string name="weather_mainly_clear">Преимущественно ясно</string>

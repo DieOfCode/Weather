@@ -3,24 +3,31 @@ package com.example.weather.weather.citypicker
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.weather.R
+import com.example.weather.weather.domain.location.DeviceLocationException
 import com.example.weather.weather.domain.model.City
 import com.example.weather.weather.domain.repository.WeatherRepository
 import com.example.weather.weather.domain.repository.WeatherRepositoryException
+import com.example.weather.weather.domain.usecase.LoadWeatherForCurrentLocationUseCase
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlin.coroutines.cancellation.CancellationException
 
 internal class CityPickerViewModel(
     private val weatherRepository: WeatherRepository,
+    private val loadWeatherForCurrentLocationUseCase: LoadWeatherForCurrentLocationUseCase,
 ) : ViewModel() {
+
+    private var searchJob: Job? = null
+    private var operationJob: Job? = null
 
     private sealed interface SearchState {
 
@@ -41,14 +48,33 @@ internal class CityPickerViewModel(
     private val searchState: StateFlow<SearchState> =
         _searchState.asStateFlow()
 
+    private val _isOperationInProgress = MutableStateFlow(false)
+
+    private val _events = Channel<CityPickerEvent>(capacity = Channel.BUFFERED)
+    val events = _events.receiveAsFlow()
+
+    private val selectedCity = weatherRepository.observeSelectedCity().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = null,
+    )
+
+    private val savedCities = weatherRepository.observeSavedCities().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.Eagerly,
+        initialValue = emptyList(),
+    )
+
     val state: StateFlow<CityPickerScreenState> = combine(
         _query,
-        weatherRepository.observeSelectedCity(),
-        weatherRepository.observeSavedCities(),
+        selectedCity,
+        savedCities,
         searchState,
-    ) { query, selectedCity, savedCities, search ->
+        _isOperationInProgress,
+    ) { query, selectedCity, savedCities, search, isOperationInProgress ->
         CityPickerScreenState(
             query = query,
+            isOperationInProgress = isOperationInProgress,
             items = buildItems(
                 query = query,
                 selectedCity = selectedCity,
@@ -64,41 +90,165 @@ internal class CityPickerViewModel(
         ),
     )
 
-    init {
-        observeSearchQuery()
-    }
-
     fun onQueryChange(query: String) {
+        if (_query.value == query) {
+            return
+        }
+
         _query.value = query
+        startSearch(
+            rawQuery = query,
+            useDebounce = true,
+        )
     }
 
-    private fun observeSearchQuery() {
-        viewModelScope.launch {
-            _query
-                .map(String::trim)
-                .distinctUntilChanged()
-                .collectLatest { normalizedQuery ->
-                    if (normalizedQuery.length < MIN_QUERY_LENGTH) {
-                        _searchState.value = SearchState.Idle
-                        return@collectLatest
-                    }
+    fun retrySearch() {
+        if (_searchState.value != SearchState.Error) {
+            return
+        }
 
-                    _searchState.value = SearchState.Idle
+        if (searchJob?.isActive == true) {
+            return
+        }
 
-                    delay(SEARCH_DELAY_MILLIS)
+        startSearch(
+            rawQuery = _query.value,
+            useDebounce = false,
+        )
+    }
 
-                    _searchState.value = SearchState.Loading
+    fun selectCity(cityId: String) {
+        if (cityId.isBlank()) {
+            _events.trySend(
+                CityPickerEvent.ShowMessage(R.string.generic_error),
+            )
+            return
+        }
 
-                    _searchState.value = try {
-                        val cities = weatherRepository.searchCities(
-                            query = normalizedQuery,
-                        )
+        val isSavedCity = savedCities.value.any { city ->
+            city.id == cityId
+        }
+        val searchCity = (_searchState.value as? SearchState.Content)
+            ?.cities
+            ?.firstOrNull { city -> city.id == cityId }
 
-                        SearchState.Content(cities)
-                    } catch (_: WeatherRepositoryException) {
-                        SearchState.Error
-                    }
-                }
+        if (!isSavedCity && searchCity == null) {
+            _events.trySend(
+                CityPickerEvent.ShowMessage(R.string.generic_error),
+            )
+            return
+        }
+
+        launchOperation {
+            if (!isSavedCity) {
+                weatherRepository.refreshWeather(checkNotNull(searchCity))
+            }
+
+            weatherRepository.selectCity(cityId)
+            _events.send(CityPickerEvent.NavigateBack)
+        }
+    }
+
+    fun deleteCity(cityId: String) {
+        if (cityId.isBlank()) {
+            return
+        }
+
+        launchOperation {
+            weatherRepository.deleteCity(cityId)
+        }
+    }
+
+    fun onLocationPermissionGranted() {
+        launchOperation {
+            loadWeatherForCurrentLocationUseCase()
+            _events.send(CityPickerEvent.NavigateBack)
+        }
+    }
+
+    fun onLocationPermissionDenied() {
+        _events.trySend(
+            CityPickerEvent.ShowMessage(R.string.location_permission_missing),
+        )
+    }
+
+    private fun launchOperation(
+        operation: suspend () -> Unit,
+    ) {
+        if (operationJob?.isActive == true) {
+            return
+        }
+
+        operationJob = viewModelScope.launch {
+            _isOperationInProgress.value = true
+
+            try {
+                operation()
+            } catch (exception: CancellationException) {
+                throw exception
+            } catch (exception: DeviceLocationException) {
+                _events.send(
+                    CityPickerEvent.ShowMessage(exception.toMessageResId()),
+                )
+            } catch (exception: WeatherRepositoryException) {
+                _events.send(
+                    CityPickerEvent.ShowMessage(exception.toMessageResId()),
+                )
+            } catch (_: Exception) {
+                _events.send(
+                    CityPickerEvent.ShowMessage(R.string.generic_error),
+                )
+            } finally {
+                _isOperationInProgress.value = false
+            }
+        }
+    }
+
+    private fun DeviceLocationException.toMessageResId(): Int = when (this) {
+        is DeviceLocationException.LocationUnavailable,
+        is DeviceLocationException.ProviderUnavailable,
+            -> R.string.location_unavailable
+
+        is DeviceLocationException.PermissionMissing -> R.string.location_permission_missing
+    }
+
+    private fun WeatherRepositoryException.toMessageResId(): Int = when (this) {
+        is WeatherRepositoryException.Network -> R.string.weather_network_error
+        is WeatherRepositoryException.Service -> R.string.weather_service_error
+        is WeatherRepositoryException.InvalidData -> R.string.weather_invalid_data_error
+    }
+
+    private fun startSearch(
+        rawQuery: String,
+        useDebounce: Boolean,
+    ) {
+        searchJob?.cancel()
+
+        val normalizedQuery = rawQuery.trim()
+        if (normalizedQuery.length < MIN_QUERY_LENGTH) {
+            searchJob = null
+            _searchState.value = SearchState.Idle
+            return
+        }
+
+        _searchState.value = SearchState.Idle
+
+        searchJob = viewModelScope.launch {
+            if (useDebounce) {
+                delay(SEARCH_DELAY_MILLIS)
+            }
+
+            _searchState.value = SearchState.Loading
+
+            _searchState.value = try {
+                val cities = weatherRepository.searchCities(
+                    query = normalizedQuery,
+                )
+
+                SearchState.Content(cities)
+            } catch (_: WeatherRepositoryException) {
+                SearchState.Error
+            }
         }
     }
 
@@ -120,7 +270,7 @@ internal class CityPickerViewModel(
 
             savedCities.forEach { city ->
                 add(
-                    city.toListItem(
+                    city.toCityListItem(
                         section = CityListSection.Saved,
                         selectedCityId = selectedCity?.id,
                         canDelete = true,
@@ -169,7 +319,7 @@ internal class CityPickerViewModel(
                 } else {
                     cities.forEach { city ->
                         add(
-                            city.toListItem(
+                            city.toCityListItem(
                                 section = CityListSection.SearchResults,
                                 selectedCityId = selectedCity?.id,
                                 canDelete = false,
@@ -180,19 +330,6 @@ internal class CityPickerViewModel(
             }
         }
     }
-
-    private fun City.toListItem(
-        section: CityListSection,
-        selectedCityId: String?,
-        canDelete: Boolean,
-    ): CityListItem.City = CityListItem.City(
-        section = section,
-        cityId = id,
-        name = name,
-        countryCode = countryCode,
-        isSelected = id == selectedCityId,
-        canDelete = canDelete,
-    )
 
     private companion object {
         const val MIN_QUERY_LENGTH = 2

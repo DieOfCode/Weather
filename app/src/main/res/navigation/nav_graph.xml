@@ -15,6 +15,10 @@
         <action
             android:id="@+id/action_weatherFragment_to_cityPickerFragment"
             app:destination="@id/cityPickerFragment" />
+
+        <action
+            android:id="@+id/action_weatherFragment_to_hourlyForecastFragment"
+            app:destination="@id/hourlyForecastFragment" />
     </fragment>
 
     <fragment
@@ -22,6 +26,21 @@
         android:name="com.example.weather.weather.citypicker.CityPickerFragment"
         android:label="@string/city_picker_title"
         tools:layout="@layout/fragment_city_picker" />
+
+    <fragment
+        android:id="@+id/hourlyForecastFragment"
+        android:name="com.example.weather.weather.hourly.HourlyForecastFragment"
+        android:label="@string/hourly_forecast_title"
+        tools:layout="@layout/fragment_hourly_forecast">
+
+        <argument
+            android:name="cityId"
+            app:argType="string" />
+
+        <argument
+            android:name="dateEpochDay"
+            app:argType="long" />
+    </fragment>
 
 </navigation>
 

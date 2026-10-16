@@ -12,6 +12,7 @@ internal object WeatherUiMapper {
         val currentCondition = weatherCondition(forecast.current.weatherCode)
 
         return WeatherUiState(
+            cityId = forecast.city.id,
             cityName = forecast.city.name,
             timeZoneId = forecast.city.timeZoneId,
             temperature = forecast.current.temperatureCelsius.roundToInt(),

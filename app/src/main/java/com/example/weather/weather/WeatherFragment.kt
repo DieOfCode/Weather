@@ -16,6 +16,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.weather.R
 import com.example.weather.databinding.FragmentWeatherBinding
+import com.example.weather.ui.insets.applyScreenInsets
+import com.example.weather.weather.hourly.HourlyForecastNavigationArgs
 import com.example.weather.ui.theme.WeatherTheme
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.take
@@ -44,6 +46,11 @@ class WeatherFragment : Fragment(R.layout.fragment_weather) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentWeatherBinding.bind(view)
 
+        binding.root.applyScreenInsets(
+            topBar = binding.toolbar,
+            bottomContent = binding.composeView,
+        )
+
         binding.composeView.setViewCompositionStrategy(
             ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed,
         )
@@ -58,7 +65,19 @@ class WeatherFragment : Fragment(R.layout.fragment_weather) {
                             R.id.action_weatherFragment_to_cityPickerFragment,
                         )
                     },
-                    onDayClick = {},
+                    onDayClick = { day ->
+                        (weatherViewState as? WeatherScreenState.Content)
+                            ?.weatherState
+                            ?.let { weatherState ->
+                                findNavController().navigate(
+                                    R.id.action_weatherFragment_to_hourlyForecastFragment,
+                                    HourlyForecastNavigationArgs(
+                                        cityId = weatherState.cityId,
+                                        date = day.date,
+                                    ).toBundle(),
+                                )
+                            }
+                    },
                     onRetry = {
                         when ((weatherViewState as? WeatherScreenState.Error)?.retryAction) {
                             WeatherRetryAction.RequestLocationPermission -> {

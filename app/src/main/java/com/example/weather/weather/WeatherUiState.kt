@@ -5,6 +5,7 @@ import com.example.weather.R
 import java.time.LocalDate
 
 data class WeatherUiState(
+    val cityId: String,
     val cityName: String,
     val timeZoneId: String,
     val temperature: Int,
@@ -57,6 +58,7 @@ enum class WeatherConditionUi(
 private val sampleStartDate: LocalDate = LocalDate.now()
 
 internal val sampleWeatherUiState = WeatherUiState(
+    cityId = "almaty",
     cityName = "Almaty",
     timeZoneId = "Asia/Almaty",
     temperature = 18,
@@ -76,6 +78,7 @@ internal val sampleWeatherUiState = WeatherUiState(
 )
 
 internal val sampleWeatherWinterUiState = WeatherUiState(
+    cityId = "astana",
     cityName = "Astana",
     timeZoneId = "Asia/Almaty",
     temperature = -18,

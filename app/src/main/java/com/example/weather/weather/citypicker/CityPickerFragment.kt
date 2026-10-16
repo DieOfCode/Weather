@@ -50,7 +50,6 @@ class CityPickerFragment : Fragment(R.layout.fragment_city_picker) {
         _binding = FragmentCityPickerBinding.bind(view)
 
         binding.root.applyScreenInsets(
-            topBar = binding.toolbar,
             bottomContent = binding.cityRecyclerView,
             includeIme = true,
         )

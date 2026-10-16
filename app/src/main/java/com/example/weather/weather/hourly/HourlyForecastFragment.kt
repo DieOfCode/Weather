@@ -27,7 +27,6 @@ class HourlyForecastFragment : Fragment(R.layout.fragment_hourly_forecast) {
         _binding = FragmentHourlyForecastBinding.bind(view)
 
         binding.root.applyScreenInsets(
-            topBar = binding.toolbar,
             bottomContent = binding.hourlyRecyclerView,
         )
 

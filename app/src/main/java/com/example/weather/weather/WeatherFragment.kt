@@ -47,7 +47,6 @@ class WeatherFragment : Fragment(R.layout.fragment_weather) {
         _binding = FragmentWeatherBinding.bind(view)
 
         binding.root.applyScreenInsets(
-            topBar = binding.toolbar,
             bottomContent = binding.composeView,
         )
 

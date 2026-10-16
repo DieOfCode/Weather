@@ -23,13 +23,10 @@ private fun View.currentPadding(): ViewPadding = ViewPadding(
 )
 
 internal fun ViewGroup.applyScreenInsets(
-    topBar: View,
     bottomContent: View,
     includeIme: Boolean = false,
 ) {
     val rootPadding = currentPadding()
-    val topBarPadding = topBar.currentPadding()
-    val topBarMinimumHeight = topBar.minimumHeight
     val bottomContentPadding = bottomContent.currentPadding()
 
     ViewCompat.setOnApplyWindowInsetsListener(this) { _, windowInsets ->
@@ -45,17 +42,10 @@ internal fun ViewGroup.applyScreenInsets(
 
         updatePadding(
             left = rootPadding.left + safeDrawingInsets.left,
-            top = rootPadding.top,
+            top = rootPadding.top + safeDrawingInsets.top,
             right = rootPadding.right + safeDrawingInsets.right,
             bottom = rootPadding.bottom,
         )
-        topBar.updatePadding(
-            left = topBarPadding.left,
-            top = topBarPadding.top + safeDrawingInsets.top,
-            right = topBarPadding.right,
-            bottom = topBarPadding.bottom,
-        )
-        topBar.minimumHeight = topBarMinimumHeight + safeDrawingInsets.top
         bottomContent.updatePadding(
             left = bottomContentPadding.left,
             top = bottomContentPadding.top,
